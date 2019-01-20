@@ -1,8 +1,5 @@
 package com.codygordon.aceflappybird.gameobjects;
 
-import java.awt.Color;
-import java.awt.Graphics;
-
 import com.codygordon.aceflappybird.views.FlappyBirdGameView;
 import com.codygordon.game.Game;
 import com.codygordon.game.gameobjects.GameObject;
@@ -30,12 +27,5 @@ public class Pipe extends GameObject {
 		if(obj instanceof Player) {
 			((FlappyBirdGameView)Game.getInstance().getGameView()).die();
 		}
-	}
-	
-	@Override
-	public void paint(Graphics g) {
-		g.setColor(Color.GREEN);
-		g.fillRect((int)location.x, (int)location.y,
-				(int)size.x, (int)size.y);
 	}
 }

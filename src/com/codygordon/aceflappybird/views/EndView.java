@@ -26,8 +26,8 @@ public class EndView extends GameView {
 		backgroundImage = AssetLoader.getSprite("background.png", width + 750, height - 25);
 		JLabel lbl = new JLabel("Your score: " + FlappyBirdGameView.score);
 		lbl.setHorizontalAlignment(SwingConstants.CENTER);
-		lbl.setSize(100, 100);
-		lbl.setFont(new Font("Ariel", Font.BOLD, 12));
+		lbl.setSize(300, 100);
+		lbl.setFont(new Font("Ariel", Font.BOLD, 25));
 		lbl.setLocation((width / 2) - (lbl.getWidth() / 2), height / 2 - (height / 2) / 2);
 		JButton btn = new JButton("Play Again");
 		btn.setSize(150, 50);
@@ -49,6 +49,7 @@ public class EndView extends GameView {
 	}
 	
 	private void playAgain() {
+		FlappyBirdGameView.score = 0;
 		Game.getInstance().switchScreen(new FlappyBirdGameView());
 	}
 }

@@ -4,9 +4,11 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
@@ -14,10 +16,13 @@ import com.codygordon.aceflappybird.gameobjects.MidPipe;
 import com.codygordon.aceflappybird.gameobjects.Pipe;
 import com.codygordon.aceflappybird.gameobjects.Player;
 import com.codygordon.aceflappybird.util.EndGameTimer;
+import com.codygordon.aceflappybird.util.INextSprite;
+import com.codygordon.aceflappybird.util.SpriteTimer;
 import com.codygordon.game.Game;
 import com.codygordon.game.assets.AssetLoader;
 import com.codygordon.game.gameobjects.GameObject;
 import com.codygordon.game.gameobjects.components.Collider;
+import com.codygordon.game.gameobjects.components.Rigidbody;
 import com.codygordon.game.input.events.KeyDownEvent;
 import com.codygordon.game.physics.Vector2;
 import com.codygordon.game.settings.Settings;
@@ -27,12 +32,9 @@ import com.codygordon.game.util.ScreenBorder.BorderDelegate;
 
 public class FlappyBirdGameView extends GameView {
 
-	public static int pipeMoveSpeed = Integer.parseInt(Settings.getInstance().getSetting("PIPE_MOVE_SPEED"));
+	public static int pipeMoveSpeed;
 
-	private int playerSize;
-	private int playerSpawnX;
-	private int playerSpawnY;
-
+	//Pipes
 	private int startingPipes;
 	private int pipeXMargin;
 	private int pipeWidth;
@@ -42,44 +44,52 @@ public class FlappyBirdGameView extends GameView {
 	private int maxPipeMid;
 	private int startingPipeMargin;
 
-	private long deathDelay;
-
+	//Player
 	private Player player;
+	private long deathDelay;
 	private static int spawnX;
 	public static int score = 0;
+	private int playerSize;
+	private int playerSpawnX;
+	private int playerSpawnY;
+	private float currentRotation = 0;
+	private float rotationSpeed = -5f;
+	private float maxRotationDown = 45;
+	private float upRotation = -30;
 
+	//Sprite
 	private BufferedImage backgroundImage;
 	private BufferedImage pipeBottomImage;
 	private BufferedImage pipeTopImage;
 	private BufferedImage birdImage;
-
+	private BufferedImage birdDownImage;
+	private BufferedImage birdMidImage;
+	private BufferedImage birdUpImage;
+	
+	private SpriteTimer birdSpriteTimer;
+	private int currentBirdSpriteStatus = 1;
+	
 	private ArrayList<Pipe> pipes = new ArrayList<Pipe>();
 
 	public static boolean canJump = true;
-
-	private void loadSettings() {
-		playerSize = getIntSetting("PLAYER_SIZE");
-		playerSpawnX = getIntSetting("PLAYER_SPAWN_X");
-		playerSpawnY = getIntSetting("PLAYER_SPAWN_Y");
-		startingPipes = getIntSetting("STARTING_PIPES");
-		pipeXMargin = getIntSetting("PIPE_X_MARGIN");
-		pipeWidth = getIntSetting("PIPE_WIDTH");
-		pipeHeight = getIntSetting("PIPE_HEIGHT");
-		pipeYMargin = getIntSetting("PIPE_Y_MARGIN");
-		minPipeMid = getIntSetting("PIPE_MIN_MID");
-		maxPipeMid = getIntSetting("PIPE_MAX_MID");
-		startingPipeMargin = getIntSetting("STARTING_PIPE_MARGIN");
-		deathDelay = Long.parseLong(Settings.getInstance().getSetting("DEATH_DELAY"));
-	}
 
 	private int getIntSetting(String name) {
 		return Integer.parseInt(Settings.getInstance().getSetting(name));
 	}
 
+	/*Overrides*/
+	
 	@Override
 	public void onCreate() {
 		loadSettings();
 		loadSprites();
+		birdSpriteTimer = new SpriteTimer(100L, new INextSprite() {
+			@Override
+			public void nextSprite() {
+				showNextBirdSprite();	
+			}
+		});
+		birdSpriteTimer.start();
 		super.onCreate();
 	}
 
@@ -99,28 +109,8 @@ public class FlappyBirdGameView extends GameView {
 		super.onDestroy();
 		Game.getInstance().getGameLoop().unRegisterUpdateListener(this);
 		canJump = true;
-		score = 0;
 	}
 	
-	private void loadSprites() {
-		int width = Game.getInstance().getWindow().getWidth();
-		int height = Game.getInstance().getWindow().getHeight();
-		backgroundImage = AssetLoader.getSprite("background.png", width + 750, height - 25);
-		pipeTopImage = AssetLoader.getSprite("pipe_top.png", pipeWidth, pipeHeight);
-		pipeBottomImage = AssetLoader.getSprite("pipe_bottom.png", pipeWidth, pipeHeight);
-		birdImage = AssetLoader.getSprite("bird.png", playerSize, playerSize);
-	}
-
-	@Override
-	public void onKeyPressed(KeyDownEvent event) {
-		int key = event.getKeyEvent().getKeyCode();
-		if (key == KeyEvent.VK_SPACE) {
-			if (canJump) {
-				player.jump();
-			}
-		}
-	}
-
 	@Override
 	public void onCreateGameObjects() {
 		player = new Player();
@@ -135,6 +125,75 @@ public class FlappyBirdGameView extends GameView {
 		}
 		spawnX = initialPipeX - pipeXMargin * (startingPipes * 2);
 	}
+	
+	@Override
+	public void onKeyPressed(KeyDownEvent event) {
+		int key = event.getKeyEvent().getKeyCode();
+		if (key == KeyEvent.VK_SPACE) {
+			if (canJump) {
+				player.jump();
+			}
+		}
+	}
+
+	@Override
+	public synchronized void destroyGameObject(GameObject obj) {
+		if (obj instanceof Pipe) {
+			pipes.remove(obj);
+		}
+	}
+	
+	/**/
+	
+	private void showNextBirdSprite() {
+		switch(currentBirdSpriteStatus) {
+		case 1:
+			birdImage = birdUpImage;
+			break;
+		case 2:
+			birdImage = birdMidImage;
+			break;
+		case 3:
+			birdImage = birdDownImage;
+			break;
+		}
+		currentBirdSpriteStatus++;
+		if(currentBirdSpriteStatus == 4) {
+			currentBirdSpriteStatus = 1;
+		}
+	}
+	
+	/*Initialization*/
+	
+	private void loadSprites() {
+		int width = Game.getInstance().getWindow().getWidth();
+		int height = Game.getInstance().getWindow().getHeight();
+		backgroundImage = AssetLoader.getSprite("background.png", width + 750, height - 25);
+		pipeTopImage = AssetLoader.getSprite("pipe_top.png", pipeWidth, pipeHeight);
+		pipeBottomImage = AssetLoader.getSprite("pipe_bottom.png", pipeWidth, pipeHeight);
+		birdUpImage = AssetLoader.getSprite("yellowbird-upflap.png");
+		birdDownImage = AssetLoader.getSprite("yellowbird-downflap.png");
+		birdMidImage = AssetLoader.getSprite("yellowbird-midflap.png");
+		birdImage = birdDownImage;
+	}
+
+	private void loadSettings() {
+		playerSize = getIntSetting("PLAYER_SIZE");
+		playerSpawnX = getIntSetting("PLAYER_SPAWN_X");
+		playerSpawnY = getIntSetting("PLAYER_SPAWN_Y");
+		startingPipes = getIntSetting("STARTING_PIPES");
+		pipeXMargin = getIntSetting("PIPE_X_MARGIN");
+		pipeWidth = getIntSetting("PIPE_WIDTH");
+		pipeHeight = getIntSetting("PIPE_HEIGHT");
+		pipeYMargin = getIntSetting("PIPE_Y_MARGIN");
+		minPipeMid = getIntSetting("PIPE_MIN_MID");
+		maxPipeMid = getIntSetting("PIPE_MAX_MID");
+		startingPipeMargin = getIntSetting("STARTING_PIPE_MARGIN");
+		deathDelay = Long.parseLong(Settings.getInstance().getSetting("DEATH_DELAY"));
+		pipeMoveSpeed = Integer.parseInt(Settings.getInstance().getSetting("PIPE_MOVE_SPEED"));
+	}
+	
+	/**/
 
 	public void addNewPipes(int x) {
 		Pipe pipeTop = new Pipe();
@@ -171,13 +230,6 @@ public class FlappyBirdGameView extends GameView {
 		pipes.add(pipeBottom);
 	}
 
-	@Override
-	public synchronized void destroyGameObject(GameObject obj) {
-		if (obj instanceof Pipe) {
-			pipes.remove(obj);
-		}
-	}
-
 	private void onBorderHit(int border, GameObject col) {
 		if (border == ScreenBorder.LEFT) {
 			if (col instanceof Pipe) {
@@ -197,14 +249,57 @@ public class FlappyBirdGameView extends GameView {
 		if(!isInitialized()) return;
 		super.paint(g);
 		g.drawImage(backgroundImage, 0, 0, null);
-		g.drawImage(birdImage, (int) player.location.x, (int) player.location.y, null);
 		drawPipes(g);
 		g.setColor(Color.WHITE);
+		drawBird(g);
 		drawCenteredString(g, score + "",
 				new Rectangle(Game.getInstance().getWindow().getWidth(), Game.getInstance().getWindow().getHeight()),
 				new Font("Ariel", Font.PLAIN, 45), 50);
 		g.setColor(Color.BLACK);
 	}        
+	
+	private void drawBird(Graphics g) {
+		float velY = ((Rigidbody)player.getComponent(Rigidbody.class)).velocity.y;
+		//Going up
+		if(velY < 0) {
+			currentRotation = upRotation;
+		}
+		//Going down
+		else {
+			if(currentRotation <= maxRotationDown) {
+				currentRotation -= rotationSpeed;	
+			}
+		}
+		BufferedImage rotatedImg = rotateImageByDegrees(birdImage, currentRotation);
+		g.drawImage(rotatedImg,
+				(int) player.location.x,
+				(int) player.location.y,
+				null);
+	}
+	
+	public BufferedImage rotateImageByDegrees(BufferedImage img, double angle) {
+        double rads = Math.toRadians(angle);
+        double sin = Math.abs(Math.sin(rads)), cos = Math.abs(Math.cos(rads));
+        int w = img.getWidth();
+        int h = img.getHeight();
+        int newWidth = (int) Math.floor(w * cos + h * sin);
+        int newHeight = (int) Math.floor(h * cos + w * sin);
+
+        BufferedImage rotated = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = rotated.createGraphics();
+        AffineTransform at = new AffineTransform();
+        at.translate((newWidth - w) / 2, (newHeight - h) / 2);
+
+        int x = w / 2;
+        int y = h / 2;
+
+        at.rotate(rads, x, y);
+        g2d.setTransform(at);
+        g2d.drawImage(img, 0, 0, this);
+        g2d.dispose();
+
+        return rotated;
+    }
 
 	private void drawCenteredString(Graphics g, String text, Rectangle rect, Font font, int y) {
 		FontMetrics metrics = g.getFontMetrics(font);
@@ -227,6 +322,9 @@ public class FlappyBirdGameView extends GameView {
 		if (!canJump)
 			return;
 		canJump = false;
+		pipeMoveSpeed = 0;
+		birdSpriteTimer.stop();
+		maxRotationDown = 75;
 		new EndGameTimer(deathDelay);
 	}
 }

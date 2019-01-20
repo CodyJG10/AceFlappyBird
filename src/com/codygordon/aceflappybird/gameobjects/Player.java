@@ -1,8 +1,7 @@
 package com.codygordon.aceflappybird.gameobjects;
 
-import java.awt.Color;
-import java.awt.Graphics;
-
+import com.codygordon.aceflappybird.views.FlappyBirdGameView;
+import com.codygordon.game.Game;
 import com.codygordon.game.gameobjects.GameObject;
 import com.codygordon.game.gameobjects.components.Collider;
 import com.codygordon.game.gameobjects.components.Rigidbody;
@@ -29,12 +28,10 @@ public class Player extends GameObject {
 	}
 	
 	@Override
-	public void paint(Graphics g) {
-		g.setColor(Color.BLACK);
-		g.fillRect((int)location.x,(int)location.y,
-				(int)size.x,(int)size.y);
-		
-		g.setColor(Color.BLUE);
-		g.drawRect(col.rect.x, col.rect.y, col.rect.width, col.rect.height);
+	public void update() {
+		super.update();
+		if(location.y > Game.getInstance().getWindow().getHeight() + size.y) {
+			((FlappyBirdGameView)Game.getInstance().getGameView()).die();
+		}
 	}
 }
