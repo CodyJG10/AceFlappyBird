@@ -13,7 +13,9 @@ import com.codygordon.game.ui.GameView;
 
 public class MenuView extends GameView {
 
-private BufferedImage backgroundImage;
+	private static final long serialVersionUID = 1L;
+	
+	private BufferedImage backgroundImage;
 	
 	@Override
 	public void onEnable() {

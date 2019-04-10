@@ -16,6 +16,8 @@ import com.codygordon.game.ui.GameView;
 
 public class EndView extends GameView {
 
+	private static final long serialVersionUID = 1L;
+	
 	private BufferedImage backgroundImage;
 	
 	@Override
