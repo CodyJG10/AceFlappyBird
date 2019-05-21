@@ -11,6 +11,7 @@
 	<Setting name="PLAYER_SIZE">35</Setting>
 	<Setting name="PLAYER_SPAWN_X">150</Setting>
 	<Setting name="PLAYER_SPAWN_Y">150</Setting>
+	<Setting name="PLAYER_IMAGE_MASK_DIAMETER">95</Setting>
 
 	<Setting name="PIPE_MOVE_SPEED">4</Setting>
 	<Setting name="STARTING_PIPES">2</Setting>

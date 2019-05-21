@@ -16,8 +16,6 @@ import com.codygordon.aceflappybird.gameobjects.MidPipe;
 import com.codygordon.aceflappybird.gameobjects.Pipe;
 import com.codygordon.aceflappybird.gameobjects.Player;
 import com.codygordon.aceflappybird.util.EndGameTimer;
-import com.codygordon.aceflappybird.util.INextSprite;
-import com.codygordon.aceflappybird.util.SpriteTimer;
 import com.codygordon.game.Game;
 import com.codygordon.game.assets.AssetLoader;
 import com.codygordon.game.gameobjects.GameObject;
@@ -63,11 +61,6 @@ public class FlappyBirdGameView extends GameView {
 	private BufferedImage pipeTopImage;
 	private BufferedImage birdImage;
 	private BufferedImage birdDownImage;
-	private BufferedImage birdMidImage;
-	private BufferedImage birdUpImage;
-	
-	private SpriteTimer birdSpriteTimer;
-	private int currentBirdSpriteStatus = 1;
 	
 	private ArrayList<Pipe> pipes = new ArrayList<Pipe>();
 
@@ -83,13 +76,6 @@ public class FlappyBirdGameView extends GameView {
 	public void onCreate() {
 		loadSettings();
 		loadSprites();
-		birdSpriteTimer = new SpriteTimer(100L, new INextSprite() {
-			@Override
-			public void nextSprite() {
-				showNextBirdSprite();	
-			}
-		});
-		birdSpriteTimer.start();
 		super.onCreate();
 	}
 
@@ -145,24 +131,6 @@ public class FlappyBirdGameView extends GameView {
 	
 	/**/
 	
-	private void showNextBirdSprite() {
-		switch(currentBirdSpriteStatus) {
-		case 1:
-			birdImage = birdUpImage;
-			break;
-		case 2:
-			birdImage = birdMidImage;
-			break;
-		case 3:
-			birdImage = birdDownImage;
-			break;
-		}
-		currentBirdSpriteStatus++;
-		if(currentBirdSpriteStatus == 4) {
-			currentBirdSpriteStatus = 1;
-		}
-	}
-	
 	/*Initialization*/
 	
 	private void loadSprites() {
@@ -171,9 +139,7 @@ public class FlappyBirdGameView extends GameView {
 		backgroundImage = AssetLoader.getSprite("background.png", width + 750, height - 25);
 		pipeTopImage = AssetLoader.getSprite("pipe_top.png", pipeWidth, pipeHeight);
 		pipeBottomImage = AssetLoader.getSprite("pipe_bottom.png", pipeWidth, pipeHeight);
-		birdUpImage = AssetLoader.getSprite("yellowbird-upflap.png");
-		birdDownImage = AssetLoader.getSprite("yellowbird-downflap.png");
-		birdMidImage = AssetLoader.getSprite("yellowbird-midflap.png");
+		birdDownImage = AssetLoader.resize(AssetLoader.getSprite("yellowbird-downflap.png"), playerSize, playerSize);
 		birdImage = birdDownImage;
 	}
 
@@ -323,7 +289,6 @@ public class FlappyBirdGameView extends GameView {
 			return;
 		canJump = false;
 		pipeMoveSpeed = 0;
-		birdSpriteTimer.stop();
 		maxRotationDown = 75;
 		new EndGameTimer(deathDelay);
 	}

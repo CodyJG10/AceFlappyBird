@@ -11,6 +11,7 @@ public class AceFlappyBird extends Game {
 
 	@Override
 	public void initGameView() {
-		gameView = new MenuView();
+//		gameView = new MenuView();
+		gameView = new FaceSelection();
 	}
 }

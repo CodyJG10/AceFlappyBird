@@ -1,5 +1,7 @@
 package com.codygordon.aceflappybird.gameobjects;
 
+import java.awt.Point;
+
 import com.codygordon.aceflappybird.views.FlappyBirdGameView;
 import com.codygordon.game.Game;
 import com.codygordon.game.gameobjects.GameObject;
@@ -15,6 +17,8 @@ public class Player extends GameObject {
 	
 	@Override
 	public void onAddComponents() {
+//		int size = Integer.parseInt(Settings.getInstance().getSetting("PLAYER_SIZE"));
+//		this.size = new Point(size, size);
 		rb = new Rigidbody(this);
 		rb.useGravity = true;
 		addComponent(rb);

@@ -34,5 +34,10 @@
 			<artifactId>Ace-Game-Engine</artifactId>
 			<version>96d566e0286cc51d20bd41bf374ea2ff41a641cf</version>
 		</dependency>
+			<dependency>
+			<groupId>com.github.sarxos</groupId>
+			<artifactId>webcam-capture</artifactId>
+			<version>0.3.12</version>
+		</dependency>
 	</dependencies>
 </project>
